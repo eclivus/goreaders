@@ -18,16 +18,16 @@ func createTestFile() (f *os.File, err error) {
 func readAndExpect(t *testing.T, it Iterater, buffer []byte, expect string) {
 	if n, err := it.Read(buffer); err != nil {
 		t.Fatalf("Could not read because: %+v", err)
-	}else if string(buffer[:n]) != expect {
+	} else if string(buffer[:n]) != expect {
 		t.Fatalf("Result incorrect: (%s) != (%s)", string(buffer[:n]), expect)
 	}
 }
 
 func expectEofAndClose(t *testing.T, it Iterater) {
-	buffer := make([]byte,1)
+	buffer := make([]byte, 1)
 	if _, err := it.Read(buffer); err != io.EOF {
 		t.Fatalf("No EOF instead: %+v", err)
-	}else if err = it.Close(); err != nil {
+	} else if err = it.Close(); err != nil {
 		t.Fatalf("Error closing file: %+v", err)
 	}
 }
@@ -56,7 +56,7 @@ func TestSeekReadOffsetFile(t *testing.T) {
 	buffer := make([]byte, 10)
 	fr := NewFileReader(f.Name()).Start("2").Run()
 
-	readAndExpect(t, fr, buffer,"c")
+	readAndExpect(t, fr, buffer, "c")
 
 	var offset string
 	if offset, err = fr.Offset(); err != nil {
@@ -71,10 +71,10 @@ func TestSeekReadOffsetFile(t *testing.T) {
 	expectEofAndClose(t, fr)
 }
 
-func TestReadEmptyFile(t *testing.T){
+func TestReadEmptyFile(t *testing.T) {
 	if f, err := ioutil.TempFile("/tmp", "test_go"); err != nil {
 		t.Fatalf("Could not create tmpty test file: %+v", err)
-	}else{
+	} else {
 		fr := NewFileReader(f.Name()).Start("2").Run()
 		expectEofAndClose(t, fr)
 	}

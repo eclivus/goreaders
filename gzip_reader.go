@@ -1,25 +1,25 @@
 package goreaders
 
 import (
-	"fmt"
-	"strconv"
 	"compress/gzip"
+	"fmt"
 	"io"
+	"strconv"
 )
 
 type GZipReader struct {
 	starterIterater StarterIterater
-	starter string
-	
+	starter         string
+
 	iterater Iterater
-	reader *gzip.Reader
-	offset int
+	reader   *gzip.Reader
+	offset   int
 }
 
 func NewGZipReader(s StarterIterater) (r StarterIterater) {
 	return &GZipReader{
 		starterIterater: s,
-		starter: "0",
+		starter:         "0",
 	}
 }
 
@@ -32,11 +32,11 @@ func (r *GZipReader) Run() (it Iterater) {
 	return r
 }
 
-func (r *GZipReader) fastForward(remaining int) (err error){
+func (r *GZipReader) fastForward(remaining int) (err error) {
 	buffer := make([]byte, 1024)
 	subBuffer := buffer
 	var n int
-	for{
+	for {
 		if remaining < 1024 {
 			subBuffer = buffer[0:remaining]
 		}
@@ -63,7 +63,7 @@ func (r *GZipReader) Read(p []byte) (n int, err error) {
 			return
 		}
 	}
-	
+
 	if n, err = r.reader.Read(p); err == nil {
 		r.offset = r.offset + n
 	}

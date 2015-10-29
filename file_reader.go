@@ -2,16 +2,16 @@ package goreaders
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strconv"
-	"io"
 )
 
 type FileReader struct {
 	filePath string
 	fp       *os.File
 	offset   int
-	start string
+	start    string
 }
 
 func NewFileReader(file string) (it StarterIterater) {
@@ -25,11 +25,11 @@ func (r *FileReader) Start(starter string) (it StarterIterater) {
 	return r
 }
 
-func (r *FileReader) Run() (it Iterater) {	
+func (r *FileReader) Run() (it Iterater) {
 	return r
 }
 
-func open(filePath string, starter string) (fp *os.File, offset int, err error){
+func open(filePath string, starter string) (fp *os.File, offset int, err error) {
 	if fp, err = os.Open(filePath); err != nil {
 		return
 	}
