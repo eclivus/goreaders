@@ -65,6 +65,9 @@ func TestReadAllJson(t *testing.T) {
 	readJsonAndExpect(t, dr, "A")
 
 	expectJsonEofAndClose(t, dr)
+	if err := dr.Read(&Object{}); err != io.EOF {
+		t.Fatalf("No EOF instead: %+v", err)
+	}
 }
 
 func TestReadOffsetStartReadJson(t *testing.T) {
