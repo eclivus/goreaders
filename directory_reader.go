@@ -10,9 +10,13 @@ import (
 	"strings"
 )
 
-type RecursiveDirectoryReader struct {
+type RecursiveDirectoryReaderStarter struct {
 	dirPath string
 	starter string
+}
+
+type RecursiveDirectoryReaderIterater struct {
+	RecursiveDirectoryReaderStarter
 
 	r                Iterater
 	filesInDirectory []os.FileInfo
@@ -24,29 +28,31 @@ type RecursiveDirectoryCursor struct {
 	CurrentFileName   string
 }
 
-func NewRecursiveDirectoryReader(dir string) (r *RecursiveDirectoryReader) {
-	return &RecursiveDirectoryReader{
+func NewRecursiveDirectoryReader(dir string) (r *RecursiveDirectoryReaderStarter) {
+	return &RecursiveDirectoryReaderStarter{
 		dirPath: dir,
 	}
 }
 
-func (rd *RecursiveDirectoryReader) Start(starter string) StarterIterater {
+func (rd *RecursiveDirectoryReaderStarter) Start(starter string) StarterIterater {
 	rd.starter = starter
 	return rd
 }
 
-func (dr *RecursiveDirectoryReader) Close() (err error) {
+func (dr *RecursiveDirectoryReaderIterater) Close() (err error) {
 	if dr.r != nil {
 		err = dr.r.Close()
 	}
 	return
 }
 
-func (rd *RecursiveDirectoryReader) Run() Iterater {
-	return rd
+func (rd *RecursiveDirectoryReaderStarter) Run() Iterater {
+	return &RecursiveDirectoryReaderIterater{
+		RecursiveDirectoryReaderStarter: *rd,
+	}
 }
 
-func (dr *RecursiveDirectoryReader) Read(p []byte) (n int, err error) {
+func (dr *RecursiveDirectoryReaderIterater) Read(p []byte) (n int, err error) {
 	if dr.r == nil {
 
 		// Starter
@@ -84,7 +90,7 @@ func (dr *RecursiveDirectoryReader) Read(p []byte) (n int, err error) {
 	}
 }
 
-func (dr *RecursiveDirectoryReader) next() error {
+func (dr *RecursiveDirectoryReaderIterater) next() error {
 	if dr.r != nil {
 		if err := dr.r.Close(); err != nil {
 			return err
@@ -109,7 +115,7 @@ func (dr *RecursiveDirectoryReader) next() error {
 	return nil
 }
 
-func (dr *RecursiveDirectoryReader) fastforward(cursor RecursiveDirectoryCursor) (err error) {
+func (dr *RecursiveDirectoryReaderIterater) fastforward(cursor RecursiveDirectoryCursor) (err error) {
 	if dr.filesInDirectory, err = ioutil.ReadDir(dr.dirPath); err != nil {
 		return
 	}
@@ -131,7 +137,7 @@ func (dr *RecursiveDirectoryReader) fastforward(cursor RecursiveDirectoryCursor)
 
 	currentFileInfo := dr.filesInDirectory[dr.nextFileIndex-1]
 	if currentFileInfo.IsDir() {
-		rc := NewRecursiveDirectoryReader(filepath.Join(dr.dirPath, currentFileInfo.Name()))
+		rc := NewRecursiveDirectoryReader(filepath.Join(dr.dirPath, currentFileInfo.Name())).Run().(*RecursiveDirectoryReaderIterater)
 		cursor.CurrentFileName = filepath.Join(strings.Split(cursor.CurrentFileName, "/")[1:]...)
 		rc.fastforward(cursor)
 		dr.r = rc
@@ -146,10 +152,10 @@ func (dr *RecursiveDirectoryReader) fastforward(cursor RecursiveDirectoryCursor)
 	return
 }
 
-func (dr *RecursiveDirectoryReader) offset() (cursor RecursiveDirectoryCursor, err error) {
+func (dr *RecursiveDirectoryReaderIterater) offset() (cursor RecursiveDirectoryCursor, err error) {
 	currentFileInfo := dr.filesInDirectory[dr.nextFileIndex-1]
 	if currentFileInfo.IsDir() {
-		child := dr.r.(*RecursiveDirectoryReader)
+		child := dr.r.(*RecursiveDirectoryReaderIterater)
 		if cursor, err = child.offset(); err != nil {
 			return
 		}
@@ -164,7 +170,7 @@ func (dr *RecursiveDirectoryReader) offset() (cursor RecursiveDirectoryCursor, e
 	return
 }
 
-func (dr *RecursiveDirectoryReader) Offset() (cursorString string, err error) {
+func (dr *RecursiveDirectoryReaderIterater) Offset() (cursorString string, err error) {
 	if dr.r == nil {
 		err = io.ErrClosedPipe
 		return
@@ -185,7 +191,7 @@ func (dr *RecursiveDirectoryReader) Offset() (cursorString string, err error) {
 	return
 }
 
-func (dr *RecursiveDirectoryReader) GetCurrentFileName() (name string) {
+func (dr *RecursiveDirectoryReaderIterater) GetCurrentFileName() (name string) {
 	if dr.filesInDirectory != nil && dr.nextFileIndex < len(dr.filesInDirectory) {
 		name = dr.filesInDirectory[dr.nextFileIndex-1].Name()
 	}

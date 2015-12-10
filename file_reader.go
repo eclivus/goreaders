@@ -7,26 +7,32 @@ import (
 	"strconv"
 )
 
-type FileReader struct {
+type FileReaderStarter struct {
 	filePath string
-	fp       *os.File
-	offset   int
 	start    string
 }
 
+type FileReaderIterater struct {
+	fp     *os.File
+	offset int
+	FileReaderStarter
+}
+
 func NewFileReader(file string) (it StarterIterater) {
-	return &FileReader{
+	return &FileReaderStarter{
 		filePath: file,
 	}
 }
 
-func (r *FileReader) Start(starter string) (it StarterIterater) {
+func (r *FileReaderStarter) Start(starter string) (it StarterIterater) {
 	r.start = starter
 	return r
 }
 
-func (r *FileReader) Run() (it Iterater) {
-	return r
+func (r *FileReaderStarter) Run() (it Iterater) {
+	return &FileReaderIterater{
+		FileReaderStarter: *r,
+	}
 }
 
 func open(filePath string, starter string) (fp *os.File, offset int, err error) {
@@ -42,7 +48,7 @@ func open(filePath string, starter string) (fp *os.File, offset int, err error) 
 	return
 }
 
-func (r *FileReader) Read(p []byte) (n int, err error) {
+func (r *FileReaderIterater) Read(p []byte) (n int, err error) {
 	if r.fp == nil {
 		if r.fp, r.offset, err = open(r.filePath, r.start); err != nil {
 			return
@@ -55,14 +61,14 @@ func (r *FileReader) Read(p []byte) (n int, err error) {
 	return
 }
 
-func (r *FileReader) Close() (err error) {
+func (r *FileReaderIterater) Close() (err error) {
 	if r.fp == nil {
 		return io.ErrClosedPipe
 	}
 	return r.fp.Close()
 }
 
-func (r *FileReader) Offset() (offset string, err error) {
+func (r *FileReaderIterater) Offset() (offset string, err error) {
 	if r.fp == nil {
 		err = io.ErrClosedPipe
 	}

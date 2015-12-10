@@ -7,9 +7,13 @@ import (
 	"strconv"
 )
 
-type GZipReader struct {
+type GZipReaderStarter struct {
 	starterIterater StarterIterater
 	starter         string
+}
+
+type GZipReaderIterater struct {
+	GZipReaderStarter
 
 	iterater Iterater
 	reader   *gzip.Reader
@@ -17,22 +21,24 @@ type GZipReader struct {
 }
 
 func NewGZipReader(s StarterIterater) (r StarterIterater) {
-	return &GZipReader{
+	return &GZipReaderStarter{
 		starterIterater: s,
 		starter:         "0",
 	}
 }
 
-func (r *GZipReader) Start(starter string) (it StarterIterater) {
+func (r *GZipReaderStarter) Start(starter string) (it StarterIterater) {
 	r.starter = starter
 	return r
 }
 
-func (r *GZipReader) Run() (it Iterater) {
-	return r
+func (r *GZipReaderStarter) Run() (it Iterater) {
+	return &GZipReaderIterater{
+		GZipReaderStarter: *r,
+	}
 }
 
-func (r *GZipReader) fastForward(remaining int) (err error) {
+func (r *GZipReaderIterater) fastForward(remaining int) (err error) {
 	buffer := make([]byte, 1024)
 	subBuffer := buffer
 	var n int
@@ -50,7 +56,7 @@ func (r *GZipReader) fastForward(remaining int) (err error) {
 	}
 }
 
-func (r *GZipReader) Read(p []byte) (n int, err error) {
+func (r *GZipReaderIterater) Read(p []byte) (n int, err error) {
 	if r.iterater == nil {
 		if r.offset, err = strconv.Atoi(r.starter); err != nil {
 			return
@@ -70,14 +76,14 @@ func (r *GZipReader) Read(p []byte) (n int, err error) {
 	return
 }
 
-func (r *GZipReader) Close() (err error) {
+func (r *GZipReaderIterater) Close() (err error) {
 	if r.iterater != nil {
 		return r.iterater.Close()
 	}
 	return
 }
 
-func (r *GZipReader) Offset() (offset string, err error) {
+func (r *GZipReaderIterater) Offset() (offset string, err error) {
 	if r.iterater == nil {
 		err = io.ErrClosedPipe
 	}
