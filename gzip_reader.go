@@ -70,7 +70,12 @@ func (r *GZipReaderIterater) Read(p []byte) (n int, err error) {
 		}
 	}
 
-	if n, err = r.reader.Read(p); err == nil {
+	n, err = r.reader.Read(p)
+	// FIX
+	if err == io.EOF && n > 0 {
+		err = nil
+	}
+	if err == nil {
 		r.offset = r.offset + n
 	}
 	return
